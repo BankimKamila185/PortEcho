@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Interactive Shipping Dashboard - Settings</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: {
+              DEFAULT: "#00a9ff",
+              light: "#33bbff",
+              dark: "#0087cc",
+            },
+            background: {
+              DEFAULT: "#0a0a0a",
+              light: "#1a1a1a",
+            },
+            card: "#141414",
+            border: "#262626",
+            text: {
+              primary: "#f5f5f5",
+              secondary: "#a3a3a3",
+              muted: "#737373",
+            },
+            accent: {
+              red: "#ff4d4d",
+              orange: "#ffc107",
+              green: "#28a745",
+            }
+          },
+          fontFamily: {
+            display: ["Inter", "sans-serif"],
+          },
+          borderRadius: {
+            lg: "0.75rem",
+            xl: "1rem",
+          },
+          transitionTimingFunction: {
+            'out-expo': 'cubic-bezier(0.16, 1, 0.3, 1)',
+          },
+        },
+      },
+    };
+  </script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet"/>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: "FILL" 0, "wght" 300, "GRAD" 0, "opsz" 24;
+      }
+      body {
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      .widget {
+        transition: transform 0.3s var(--tw-transition-timing-function-out-expo), box-shadow 0.3s var(--tw-transition-timing-function-out-expo);
+      }
+      .widget:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 50px -12px rgba(0, 169, 255, 0.1);
+      }
+      html {
+            scroll-behavior: smooth;
+        }
+        .compact .p-6 { padding: 1rem; }
+        .compact .py-4 { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .compact .px-6 { padding-left: 1rem; padding-right: 1rem; }
+        .compact .text-3xl { font-size: 1.75rem; }
+        .compact .text-xl { font-size: 1.125rem; }
+        .compact .text-sm { font-size: 0.875rem; }
+        .compact .text-xs { font-size: 0.75rem; }
+        .compact .space-y-12 > :not([hidden]) ~ :not([hidden]) { margin-top: 2rem; }
+        .compact .space-y-6 > :not([hidden]) ~ :not([hidden]) { margin-top: 1rem; }
+        .compact .gap-6 { gap: 1rem; }
+        .compact .mt-2 { margin-top: 0.5rem; }
+        .compact .mt-1 { margin-top: 0.25rem; }
+        .compact .py-2\.5 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+        .compact .h-16 { height: 3rem; }
+        .compact .w-16 { width: 3rem; }
+        .compact .h-9 { height: 2.25rem; }
+        .compact .w-9 { width: 2.25rem; }
+        .compact .py-2 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+        .compact .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+        .compact .gap-3 { gap: 0.5rem; }
+        .compact .mb-8 { margin-bottom: 1.5rem; }
+        .compact .h-8 { height: 1.5rem; }
+        .compact .w-8 { width: 1.5rem; }
+        .compact .text-lg { font-size: 1rem; }
+        .compact .h-6 { height: 1.25rem; }
+        .compact .w-11 { width: 2rem; }
+        .compact .after\:h-5 { height: 1rem; }
+        .compact .after\:w-5 { width: 1rem; }
+        .compact .after\:left-\[2px\] { left: 1px; }
+        .compact .after\:top-0\.5 { top: 1px; }
+    </style>
+</head>
+<body class="bg-background font-display text-text-primary">
+<div class="flex h-screen overflow-hidden">
+  <aside class="w-72 flex-shrink-0 bg-background-light border-r border-border p-6 flex flex-col justify-between">
+    <div class="flex items-center gap-3 mb-10">
+      <svg class="h-8 w-8 text-primary" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path clip-rule="evenodd" d="M12.0799 24L4 19.2479L9.95537 8.75216L18.04 13.4961L18.0446 4H29.9554L29.96 13.4961L38.0446 8.75216L44 19.2479L35.92 24L44 28.7521L38.0446 39.2479L29.96 34.5039L29.9554 44H18.0446L18.04 34.5039L9.95537 39.2479L4 28.7521L12.0799 24Z" fill="currentColor" fill-rule="evenodd"></path>
+      </svg>
+      <h1 class="text-2xl font-bold tracking-tight">ShipTrack</h1>
+    </div>
+    <div class="mb-6">
+      <a href="dashboard.html" class="flex items-center gap-3 px-4 py-2 rounded-lg bg-primary text-white hover:bg-primary-dark transition-colors">
+        Back to Dashboard
+      </a>
+    </div>
+<div class="space-y-6">
+<div>
+<h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Main Menu</h3>
+<div class="space-y-2">
+<a href="./dashboard.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition-all">
+<span class="material-symbols-outlined">dashboard</span>
+                    Dashboard
+                </a>
+<a href="./tracking.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition-all">
+<span class="material-symbols-outlined">inventory_2</span>
+                    Shipment Tracking
+                </a>
+<a href="./alerts.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition-all">
+<span class="material-symbols-outlined">warning</span>
+                    Alerts
+                </a>
+<a href="./analytics.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition-all">
+<span class="material-symbols-outlined">analytics</span>
+                    Reports &amp; Analytics
+                </a>
+<a href="./settings.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold transition-all">
+<span class="material-symbols-outlined">settings</span>
+                    Settings
+                </a>
+</div>
+</div>
+<div>
+<h3 class="text-sm font-semibold text-text-secondary uppercase tracking-wider mb-3">Alert Log</h3>
+<div class="space-y-3 max-h-64 overflow-y-auto pr-2">
+<div class="flex items-start gap-3 p-3 rounded-lg bg-accent-red/10">
+<span class="material-symbols-outlined text-accent-red mt-0.5">warning</span>
+<div>
+<p class="text-sm font-medium text-text-primary">SHP-2023-005</p>
+<p class="text-xs text-text-secondary">Engine Malfunction - Valencia</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 rounded-lg bg-accent-orange/10">
+<span class="material-symbols-outlined text-accent-orange mt-0.5">schedule</span>
+<div>
+<p class="text-sm font-medium text-text-primary">SHP-2023-003</p>
+<p class="text-xs text-text-secondary">Customs Delay - Hamburg</p>
+</div>
+</div>
+<div class="flex items-start gap-3 p-3 rounded-lg bg-accent-red/10">
+<span class="material-symbols-outlined text-accent-red mt-0.5">error</span>
+<div>
+<p class="text-sm font-medium text-text-primary">TRK-2023-112</p>
+<p class="text-xs text-text-secondary">Route Deviation - I-95</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="space-y-2">
+<button class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition-all">
+<span class="material-symbols-outlined">account_circle</span>
+        User Profile
+    </button>
+<button class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition-all">
+<span class="material-symbols-outlined">logout</span>
+        Logout
+    </button>
+</div>
+</aside>
+<main class="flex-1 overflow-y-auto bg-background p-8">
+<header class="flex items-center justify-between mb-8">
+<div>
+<h2 class="text-4xl font-extrabold text-text-primary tracking-tight">Settings</h2>
+<p class="text-text-secondary mt-1">Manage your account settings, preferences, and integrations.</p>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<input class="w-72 bg-background-light border border-border rounded-lg py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary" placeholder="Search shipments, routes, vessels..." type="text"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">search</span>
+</div>
+<button class="flex items-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-background-light transition-all hover:bg-primary-light hover:scale-105 active:scale-100">
+<span class="material-symbols-outlined text-base">add</span>
+New Shipment
+</button>
+<div class="flex items-center gap-2">
+<div class="h-10 w-10 rounded-full bg-cover bg-center border-2 border-border" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCBrxJW8GfsVyRj_Rlk4OAZ9gZNc7j-z2fcgY7r0yHbMqLudtWJUIazaDjvQBbkBbGV_9VN9F_xmCr740G_Qh-72d8EwVpXXQ6pF4ZTtXuuVyzuxExpzv6N8EZXc7DkrQyt6Q0Wwp0JIZS1CgGtO1nyxyFVhrMkUbAbg-F6l6jX_LgSlRzZNQUSBQIyaaMy9yrWXAh_kpsFFljPlyvtqgASCQrPS2rCgEgqALzeWC5L5DXU9FY14oNb6botgxf-hIIF4kSmkXvKGu1X");'></div>
+<div>
+<p class="font-semibold text-sm text-text-primary">Admin User</p>
+<p class="text-xs text-text-secondary">Logistics Manager</p>
+</div>
+</div>
+</div>
+
+</header>
+<div class="mx-auto max-w-4xl">
+<nav class="mt-8 flex flex-row overflow-x-auto lg:hidden">
+<a class="flex items-center gap-3 whitespace-nowrap rounded-lg border-b-2 border-primary px-1 py-3 text-sm font-semibold text-primary" href="#account">
+<span class="material-symbols-outlined text-lg">person</span>
+                        Account
+                    </a>
+<a class="flex items-center gap-3 whitespace-nowrap border-b-2 border-transparent px-1 py-3 text-sm font-medium text-text-muted hover:border-border hover:text-text-secondary" href="#notifications">
+<span class="material-symbols-outlined text-lg">notifications</span>
+                        Notifications
+                    </a>
+<a class="flex items-center gap-3 whitespace-nowrap border-b-2 border-transparent px-1 py-3 text-sm font-medium text-text-muted hover:border-border hover:text-text-secondary" href="#integrations">
+<span class="material-symbols-outlined text-lg">integration_instructions</span>
+                        Integrations
+                    </a>
+<a class="flex items-center gap-3 whitespace-nowrap border-b-2 border-transparent px-1 py-3 text-sm font-medium text-text-muted hover:border-border hover:text-text-secondary" href="#display">
+<span class="material-symbols-outlined text-lg">palette</span>
+                        Display
+                    </a>
+</nav>
+<div class="mt-8 space-y-12">
+<section class="rounded-xl border border-border bg-card shadow-lg" id="account">
+<div class="p-6">
+<h3 class="text-xl font-semibold leading-6 text-text-primary">Personal Information</h3>
+<p class="mt-1 text-sm text-text-muted">Update your photo and personal details.</p>
+</div>
+<div class="border-t border-border p-6">
+<div class="flex flex-col gap-6 lg:flex-row lg:items-center">
+<div class="flex-1">
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="full-name">Full Name</label>
+<div class="mt-2">
+<input class="form-input block w-full rounded-lg border-border bg-background p-3 text-text-primary shadow-sm focus:border-primary focus:ring-primary" id="full-name" name="full-name" type="text" value="Alex Doe"/>
+</div>
+</div>
+<div class="flex-1">
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="email">Email Address</label>
+<div class="mt-2">
+<input class="form-input block w-full rounded-lg border-border bg-background p-3 text-text-primary shadow-sm focus:border-primary focus:ring-primary" id="email" name="email" type="email" value="alex.doe@example.com"/>
+</div>
+</div>
+</div>
+<div class="mt-6 flex items-center gap-6">
+<div class="h-16 w-16 rounded-full bg-cover bg-center ring-2 ring-border" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD72KRdgSpBE9kxiI8STzhWRCdN57QCqcQMn-Eq54oKxbTxtIX2oFpDFzCvKGCJ-01QUx1OCvpbktUiFw5kniBiHNuHoGP0JG7fHCGndshCLOLmh7z_2DS8UUhxFLSpH3t-0UyKL0MH0udYFuXCK3_uGWf-mLjomY9gZrS7q5uvgycwa1nXrJzzf0v1nMNRmPgdMghGb-icI3ij4OWqeCpHNjkYDwKKQSFBgvbsPGIhI82cJrJMFOxg8mRtYCpQTUgOWINsnAUmBF75");'></div>
+<div class="flex items-center gap-4">
+<button class="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary/90" type="button">Change</button>
+<button class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-white/5" type="button">Remove</button>
+</div>
+</div>
+</div>
+<div class="flex justify-end border-t border-border bg-card/50 px-6 py-4 rounded-b-xl">
+<button class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" type="button">Save Changes</button>
+</div>
+</section>
+<section class="rounded-xl border border-border bg-card shadow-lg" id="change-password">
+<div class="p-6">
+<h3 class="text-xl font-semibold leading-6 text-text-primary">Change Password</h3>
+<p class="mt-1 text-sm text-text-muted">Update the password associated with your account.</p>
+</div>
+<div class="border-t border-border p-6">
+<div class="space-y-6">
+<div>
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="current-password">Current Password</label>
+<div class="mt-2">
+<input class="form-input block w-full rounded-lg border-border bg-background p-3 text-text-primary shadow-sm focus:border-primary focus:ring-primary" id="current-password" name="current-password" placeholder="Enter current password" type="password"/>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="new-password">New Password</label>
+<div class="mt-2">
+<input class="form-input block w-full rounded-lg border-border bg-background p-3 text-text-primary shadow-sm focus:border-primary focus:ring-primary" id="new-password" name="new-password" placeholder="Enter new password" type="password"/>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="confirm-password">Confirm New Password</label>
+<div class="mt-2">
+<input class="form-input block w-full rounded-lg border-border bg-background p-3 text-text-primary shadow-sm focus:border-primary focus:ring-primary" id="confirm-password" name="confirm-password" placeholder="Confirm new password" type="password"/>
+</div>
+</div>
+</div>
+</div>
+<div class="flex justify-end border-t border-border bg-card/50 px-6 py-4 rounded-b-xl">
+<button class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" type="button">Change Password</button>
+</div>
+</section>
+<section class="rounded-xl border border-border bg-card shadow-lg" id="notifications">
+<div class="p-6">
+<h3 class="text-xl font-semibold leading-6 text-text-primary">Notifications</h3>
+<p class="mt-1 text-sm text-text-muted">Manage your notification preferences.</p>
+</div>
+<div class="border-t border-border p-6 space-y-6">
+<div class="flex items-center justify-between">
+<label class="text-text-secondary text-sm font-medium" for="email-notifications">Email Notifications</label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" id="email-notifications" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-border-dark rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-text-secondary text-sm font-medium" for="push-notifications">Push Notifications</label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="push-notifications" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-border-dark rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="flex justify-end border-t border-border bg-card/50 px-6 py-4 rounded-b-xl">
+<button class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" type="button">Save Changes</button>
+</div>
+</section>
+<section class="rounded-xl border border-border bg-card shadow-lg" id="integrations">
+<div class="p-6">
+<h3 class="text-xl font-semibold leading-6 text-text-primary">Integrations</h3>
+<p class="mt-1 text-sm text-text-muted">Connect your account with third-party services.</p>
+</div>
+<div class="border-t border-border p-6 space-y-6">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-xl text-text-secondary">cloud</span>
+<div>
+<p class="text-text-primary font-medium">Cloud Storage</p>
+<p class="text-text-muted text-sm">Integrate with your cloud storage provider.</p>
+</div>
+</div>
+<button class="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-text-secondary hover:bg-white/5" type="button">Connect</button>
+</div>
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-xl text-text-secondary">data_thresholding</span>
+<div>
+<p class="text-text-primary font-medium">Analytics Platform</p>
+<p class="text-text-muted text-sm">Sync data with your analytics dashboard.</p>
+</div>
+</div>
+<button class="rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600" type="button">Disconnect</button>
+</div>
+</div>
+<div class="flex justify-end border-t border-border bg-card/50 px-6 py-4 rounded-b-xl">
+<button class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" type="button">Save Changes</button>
+</div>
+</section>
+<section class="rounded-xl border border-border bg-card shadow-lg" id="display">
+<div class="p-6">
+<h3 class="text-xl font-semibold leading-6 text-text-primary">Display</h3>
+<p class="mt-1 text-sm text-text-muted">Customize the appearance of the application.</p>
+</div>
+<div class="border-t border-border p-6 space-y-6">
+<div>
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="theme-select">Theme</label>
+<div class="mt-2">
+<select class="form-select block w-full rounded-lg border-border bg-background p-3 text-text-primary shadow-sm focus:border-primary focus:ring-primary" id="theme-select" name="theme">
+<option value="dark">Dark</option>
+<option value="light">Light</option>
+</select>
+</div>
+</div>
+<div>
+<label class="block text-sm font-medium leading-6 text-text-secondary" for="font-size">Font Size</label>
+<div class="mt-2">
+<input class="w-full h-2 bg-border-dark rounded-lg appearance-none cursor-pointer range-lg" id="font-size" max="18" min="14" name="font-size" type="range" value="16"/>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<label class="text-text-secondary text-sm font-medium" for="compact-mode">Compact Mode</label>
+<label class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" id="compact-mode" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-border-dark rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<div class="flex justify-end border-t border-border bg-card/50 px-6 py-4 rounded-b-xl">
+<button class="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" type="button">Save Changes</button>
+</div>
+</section>
+</div>
+</div>
+</main>
+</div>
+</div>
+</main>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const compactModeToggle = document.getElementById('compact-mode');
+        const htmlElement = document.documentElement;
+        // Load saved preference
+        const isCompact = localStorage.getItem('compactMode') === 'true';
+        if (isCompact) {
+            htmlElement.classList.add('compact');
+            compactModeToggle.checked = true;
+        }
+        compactModeToggle.addEventListener('change', (event) => {
+            if (event.target.checked) {
+                htmlElement.classList.add('compact');
+                localStorage.setItem('compactMode', 'true');
+            } else {
+                htmlElement.classList.remove('compact');
+                localStorage.setItem('compactMode', 'false');
+            }
+        });
+    });
+</script>
+
+<script src="../js/api.js"></script>
+<script src="../js/settings.js"></script>
+</body></html>

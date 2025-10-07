@@ -1,0 +1,561 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>PortEcho IoT Container Tracker — Fresh</title>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <!-- QR generator -->
+  <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+  <!-- QR scanner -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <style>
+    body{font-family:Inter,system-ui,Arial;margin:20px;background:#f4f7fb;color:#111}
+    .card{background:#fff;padding:18px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.05);max-width:920px;margin:16px auto}
+    h1{color:#063f88;margin:0 0 12px}
+    input,select,textarea,button{font-size:14px}
+    input,select,textarea{width:100%;padding:10px;margin:8px 0;border:1px solid #d1d5db;border-radius:8px}
+    button{padding:10px 14px;border-radius:8px;border:none;background:#0b63d4;color:#fff;cursor:pointer}
+    button.secondary{background:#6b7280}
+    .row{display:flex;gap:12px}
+    .col{flex:1}
+    small{color:#6b7280}
+    #reader{max-width:360px;margin:12px auto;display:none}
+    canvas{border-radius:8px;background:#fff;margin:6px 0}
+    .muted{color:#6b7280}
+  </style>
+</head>
+<body>
+
+<div class="card" id="authCard">
+  <h1>PortEcho IoT Container Tracker</h1>
+
+  <div id="loginBox">
+    <h3>Admin login</h3>
+    <input id="loginEmail" type="email" placeholder="Email" />
+    <input id="loginPassword" type="password" placeholder="Password" />
+    <div style="margin-top:10px">
+      <button id="loginBtn">Login</button>
+      <button id="loginDemoBtn" class="secondary">Demo (no network)</button>
+    </div>
+    <p id="loginMessage" class="muted"></p>
+  </div>
+
+  <div id="userBox" style="display:none">
+    <p>Signed in as <span id="userEmail"></span></p>
+    <button id="logoutBtn" class="secondary">Logout</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="card">
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="showSection('register')">Register Sensor</button>
+      <button onclick="showSection('update')">Update / Start Journey</button>
+      <button onclick="showSection('list')">All Sensors</button>
+    </div>
+  </div>
+
+  <!-- Register -->
+  <div class="card" id="register" style="display:none">
+    <h2>Register Sensor (one-time)</h2>
+    <div class="row">
+      <div class="col">
+        <input id="r_ownerName" placeholder="Owner Name" />
+        <input id="r_ownerEmail" placeholder="Owner Email" />
+        <input id="r_ownerPhone" placeholder="Owner Phone" />
+        <input id="r_company" placeholder="Company" />
+        <input id="r_containerNumber" placeholder="Container Number (unique)" />
+        <div class="row">
+          <select id="r_size" class="col"><option>20ft</option><option>40ft</option></select>
+          <select id="r_type" class="col"><option>Dry</option><option>Reefer</option></select>
+        </div>
+        <div style="margin-top:8px">
+          <button id="registerBtn">Register Sensor</button>
+          <small id="registerMsg" class="muted"></small>
+        </div>
+      </div>
+
+      <div style="width:260px">
+        <h4>Sensor QR (fixed)</h4>
+        <canvas id="fixedQr" width="200" height="200"></canvas>
+        <div style="margin-top:6px">
+          <button id="downloadFixedQr">Download QR</button>
+          <p id="fixedSensorId" class="muted"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Update / Start -->
+  <div class="card" id="update" style="display:none">
+    <h2>Fetch Sensor & Update / Start Journey</h2>
+    <div class="row">
+      <input id="u_searchId" placeholder="Enter Sensor ID (SEN-...)" />
+      <button id="u_fetchBtn">Fetch</button>
+      <button id="u_scanBtn" class="secondary">Scan QR</button>
+    </div>
+    <div id="reader" ></div>
+
+    <div id="u_sensorDetails" style="display:none;margin-top:12px">
+      <h3>Sensor Info</h3>
+      <p><strong>ID:</strong> <span id="u_sensorId"></span></p>
+      <p><strong>Container:</strong> <span id="u_container"></span></p>
+      <p><strong>Company:</strong> <span id="u_company"></span></p>
+      <p><strong>Owner:</strong> <span id="u_owner"></span></p>
+
+      <h3>Update Journey Info (pre-fill)</h3>
+      <div class="row">
+        <input id="u_from" placeholder="From" />
+        <input id="u_to" placeholder="To" />
+      </div>
+      <div class="row">
+        <select id="u_mode" class="col"><option>Ship</option><option>Air</option><option>Train</option><option>Truck</option></select>
+        <input id="u_expected" type="date" class="col" />
+      </div>
+      <div class="row">
+        <input id="u_carrierName" placeholder="Carrier Name" />
+        <input id="u_carrierContact" placeholder="Carrier Contact" />
+      </div>
+
+      <h4>Items (for Journey)</h4>
+      <textarea id="u_itemDesc" placeholder="Item description"></textarea>
+      <div class="row">
+        <input id="u_itemQty" type="number" placeholder="Quantity" />
+        <input id="u_itemWeight" type="number" placeholder="Weight (kg)" />
+      </div>
+
+      <div style="margin-top:8px">
+        <button id="u_saveInfo">Update Latest Journey</button>
+        <button id="u_startJourney">Start New Journey</button>
+        <small id="u_msg" class="muted"></small>
+      </div>
+
+      <hr />
+      <h3>Journey History</h3>
+      <div id="u_history" class="muted">No journeys loaded</div>
+
+      <div style="margin-top:12px">
+        <h4>Dynamic Journey QR (invoice-style)</h4>
+        <canvas id="dynQr" width="200" height="200"></canvas>
+        <div style="margin-top:8px">
+          <button id="downloadInvoicePdf">Download PDF Invoice</button>
+          <button id="downloadDynQr">Download QR Image</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- List -->
+  <div class="card" id="list" style="display:none">
+    <h2>All Sensors</h2>
+    <div id="listContainer">Loading...</div>
+    <div style="margin-top:10px"><button id="exportCsv">Export CSV</button></div>
+  </div>
+</div>
+
+<script>
+/* ----------------- FIREBASE CONFIG ----------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyDTG9CdIT84AREt3d8o0iqc6PA3QrCfnuU",
+  authDomain: "portecho-5d71e.firebaseapp.com",
+  projectId: "portecho-5d71e",
+  storageBucket: "portecho-5d71e.appspot.com",
+  messagingSenderId: "915999347379",
+  appId: "1:915999347379:web:a903839c9ddae3f0f056c6"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+
+/* Admins allowed */
+const ADMINS = ["admin@portecho.com","admin1@example.com","admin2@example.com"];
+
+/* UI helper */
+const $ = id => document.getElementById(id);
+
+/* ----------------- All UI elements ----------------- */
+const loginBox = $('loginBox'), loginMessage = $('loginMessage'), loginBtn = $('loginBtn'),
+loginEmail = $('loginEmail'), loginPassword = $('loginPassword'), loginDemoBtn = $('loginDemoBtn'),
+userBox = $('userBox'), userEmailSpan = $('userEmail'), logoutBtn = $('logoutBtn'),
+app = $('app'), authCard = $('authCard'),
+registerSection = $('register'), updateSection = $('update'), listSection = $('list'),
+registerBtn = $('registerBtn'), registerMsg = $('registerMsg'),
+fixedQrCanvas = $('fixedQr'), fixedSensorId = $('fixedSensorId'), downloadFixedQr = $('downloadFixedQr'),
+u_fetchBtn = $('u_fetchBtn'), u_searchId = $('u_searchId'), u_scanBtn = $('u_scanBtn'), readerElem = $('reader'),
+u_sensorDetails = $('u_sensorDetails'), u_sensorId = $('u_sensorId'), u_container = $('u_container'),
+u_company = $('u_company'), u_owner = $('u_owner'), u_from = $('u_from'), u_to = $('u_to'),
+u_mode = $('u_mode'), u_expected = $('u_expected'), u_carrierName = $('u_carrierName'), u_carrierContact = $('u_carrierContact'),
+u_itemDesc = $('u_itemDesc'), u_itemQty = $('u_itemQty'), u_itemWeight = $('u_itemWeight'),
+u_saveInfo = $('u_saveInfo'), u_startJourney = $('u_startJourney'), u_msg = $('u_msg'), u_history = $('u_history'),
+dynQrCanvas = $('dynQr'), downloadInvoicePdf = $('downloadInvoicePdf'), downloadDynQr = $('downloadDynQr'),
+exportCsvBtn = $('exportCsv'), listContainer = $('listContainer');
+
+/* Register inputs */
+const r_ownerName = $('r_ownerName'), r_ownerEmail = $('r_ownerEmail'), r_ownerPhone = $('r_ownerPhone'),
+      r_company = $('r_company'), r_containerNumber = $('r_containerNumber'), r_size = $('r_size'), r_type = $('r_type');
+
+/* state */
+let currentDocId = null;        
+let currentSensor = null;       
+let html5QrScanner = null;
+
+/* ----------------- AUTH ----------------- */
+loginBtn.addEventListener('click', async () => {
+  loginMessage.innerText = "";
+  const email = loginEmail.value.trim(), password = loginPassword.value;
+  if (!email || !password) { loginMessage.innerText = "Enter email and password"; return; }
+  try { await auth.signInWithEmailAndPassword(email, password); }
+  catch (e) { loginMessage.innerText = e.message; }
+});
+
+loginDemoBtn.addEventListener('click', () => {
+  userBox.style.display = 'block';
+  userEmailSpan.innerText = 'demo@portecho.local';
+  authCard.style.display = 'none';
+  app.style.display = 'block';
+  showSection('register');
+});
+
+logoutBtn.addEventListener('click', () => auth.signOut());
+
+auth.onAuthStateChanged(user => {
+  if (user && ADMINS.includes(user.email)) {
+    userBox.style.display = 'block';
+    loginBox.style.display = 'none';
+    userEmailSpan.innerText = user.email;
+    app.style.display = 'block';
+    authCard.style.display = 'none';
+    showSection('register');
+  } else {
+    loginBox.style.display = 'block';
+    userBox.style.display = 'none';
+    app.style.display = 'none';
+    authCard.style.display = 'block';
+  }
+});
+
+/* ----------------- UI helpers ----------------- */
+function showSection(name) {
+  registerSection.style.display = (name==='register')?'block':'none';
+  updateSection.style.display = (name==='update')?'block':'none';
+  listSection.style.display = (name==='list')?'block':'none';
+  if(name==='list') loadList();
+}
+
+/* ----------------- Registration ----------------- */
+function generateSensorId() {
+  const chars="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let id="SEN-"; for(let i=0;i<6;i++) id+=chars.charAt(Math.floor(Math.random()*chars.length));
+  return id;
+}
+
+registerBtn.addEventListener('click', async ()=>{
+  registerMsg.innerText="";
+  const ownerName=r_ownerName.value.trim(), ownerEmail=r_ownerEmail.value.trim(), ownerPhone=r_ownerPhone.value.trim();
+  const company=r_company.value.trim(), containerNumber=r_containerNumber.value.trim();
+  const size=r_size.value, type=r_type.value;
+
+  if(!ownerName||!ownerEmail||!ownerPhone||!company||!containerNumber){registerMsg.innerText="Please fill all fields.";return;}
+
+  const q=await db.collection('sensors').where('containerNumber','==',containerNumber).where('ownerEmail','==',ownerEmail).get();
+  if(!q.empty){registerMsg.innerText="Sensor already registered for this container and owner.";return;}
+
+  const sensorId=generateSensorId();
+  const payload={sensorId,ownerName,ownerEmail,ownerPhone,company,containerNumber,size,type,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+    journeyHistory: []
+  };
+
+  try{
+    const docRef=await db.collection('sensors').add(payload);
+    registerMsg.innerText="Registered: "+sensorId;
+    fixedSensorId.innerText=sensorId;
+    new QRious({element:fixedQrCanvas,value:sensorId,size:200});
+  }catch(err){registerMsg.innerText="Error: "+err.message;}
+});
+
+downloadFixedQr.addEventListener('click', ()=>{
+  const link=document.createElement('a');
+  link.download=(fixedSensorId.innerText||'sensor')+'_QR.png';
+  link.href=fixedQrCanvas.toDataURL();
+  link.click();
+});
+
+/* ----------------- Fetch Sensor ----------------- */
+u_fetchBtn.addEventListener('click',()=>fetchSensorByInput());
+async function fetchSensorByInput(){ const id=u_searchId.value.trim(); if(!id){alert('Enter sensor id');return;} await fetchSensor(id); }
+
+async function fetchSensor(id){
+  u_msg.innerText=''; u_sensorDetails.style.display='none'; currentDocId=null; currentSensor=null;
+  try{
+    const snapshot=await db.collection('sensors').where('sensorId','==',id).get();
+    if(snapshot.empty){ u_msg.innerText='Sensor not found'; return; }
+    const doc=snapshot.docs[0]; currentDocId=doc.id; currentSensor=doc.data();
+
+    // fill UI
+    u_sensorId.innerText=currentSensor.sensorId;
+    u_container.innerText=currentSensor.containerNumber;
+    u_company.innerText=currentSensor.company;
+    u_owner.innerText=currentSensor.ownerName;
+
+    // pre-fill latest journey
+    const lastJourney=currentSensor.journeyHistory.length ? currentSensor.journeyHistory[currentSensor.journeyHistory.length-1] : null;
+    u_from.value=lastJourney?.from||'';
+    u_to.value=lastJourney?.to||'';
+    u_mode.value=lastJourney?.mode||'Ship';
+    u_expected.value=lastJourney?.expectedDelivery||'';
+    u_carrierName.value=lastJourney?.carrierName||'';
+    u_carrierContact.value=lastJourney?.carrierContact||'';
+    u_itemDesc.value=lastJourney?.items?.description||'';
+    u_itemQty.value=lastJourney?.items?.quantity||'';
+    u_itemWeight.value=lastJourney?.items?.weight||'';
+
+    // display history
+    if(currentSensor.journeyHistory.length){
+      u_history.innerHTML=currentSensor.journeyHistory.map((j,i)=>`<p><strong>Journey ${i+1}:</strong> ${j.from} → ${j.to} (${j.mode}) Expected: ${j.expectedDelivery}</p>`).join('');
+    } else u_history.innerText='No journeys yet';
+    u_sensorDetails.style.display='block';
+    generateDynamicQR();
+  }catch(err){ u_msg.innerText='Error: '+err.message; }
+}
+
+/* ----------------- Update latest journey ----------------- */
+u_saveInfo.addEventListener('click', async()=>{
+  if(!currentDocId){ u_msg.innerText='No sensor loaded'; return; }
+  const latestJourney=currentSensor.journeyHistory.length ? currentSensor.journeyHistory[currentSensor.journeyHistory.length-1] : null;
+  if(!latestJourney){ u_msg.innerText='No journey to update. Use Start New Journey'; return; }
+
+  const updatedJourney={
+    ...latestJourney,
+    from:u_from.value, to:u_to.value, mode:u_mode.value,
+    expectedDelivery:u_expected.value,
+    carrierName:u_carrierName.value, carrierContact:u_carrierContact.value,
+    items:{description:u_itemDesc.value, quantity:u_itemQty.value, weight:u_itemWeight.value}
+  };
+
+  try{
+    await db.collection('sensors').doc(currentDocId).update({
+      journeyHistory: firebase.firestore.FieldValue.arrayRemove(latestJourney)
+    });
+    await db.collection('sensors').doc(currentDocId).update({
+      journeyHistory: firebase.firestore.FieldValue.arrayUnion(updatedJourney)
+    });
+    u_msg.innerText='Latest journey updated';
+    await fetchSensor(currentSensor.sensorId);
+  }catch(err){ u_msg.innerText='Error: '+err.message; }
+});
+
+/* ----------------- Start new journey ----------------- */
+u_startJourney.addEventListener('click', async()=>{
+  if(!currentDocId){ u_msg.innerText='No sensor loaded'; return; }
+  const newJourney={
+    from:u_from.value, to:u_to.value, mode:u_mode.value,
+    expectedDelivery:u_expected.value,
+    carrierName:u_carrierName.value, carrierContact:u_carrierContact.value,
+    items:{description:u_itemDesc.value, quantity:u_itemQty.value, weight:u_itemWeight.value},
+    startTime:new Date().toISOString()
+  };
+
+  try{
+    await db.collection('sensors').doc(currentDocId).update({
+      journeyHistory: firebase.firestore.FieldValue.arrayUnion(newJourney)
+    });
+    u_msg.innerText='New journey started';
+    await fetchSensor(currentSensor.sensorId);
+  }catch(err){ u_msg.innerText='Error: '+err.message; }
+});
+
+/* ----------------- QR Scanner ----------------- */
+u_scanBtn.addEventListener('click', ()=>{
+  readerElem.style.display='block';
+  if(html5QrScanner){ html5QrScanner.clear(); }
+  html5QrScanner = new Html5Qrcode("reader");
+  html5QrScanner.start({ facingMode: "environment" }, { fps: 10, qrbox: 250 }, qrCodeMessage=>{
+    u_searchId.value = qrCodeMessage; fetchSensor(qrCodeMessage); html5QrScanner.stop(); readerElem.style.display='none';
+  }).catch(err=>console.log(err));
+});
+
+/* ----------------- Dynamic QR ----------------- */
+function generateDynamicQR(){
+  if(!currentSensor) return;
+  const lastJourney=currentSensor.journeyHistory.length ? currentSensor.journeyHistory[currentSensor.journeyHistory.length-1] : null;
+  if(!lastJourney) return;
+  const data = {
+    sensorId: currentSensor.sensorId,
+    container: currentSensor.containerNumber,
+    from:lastJourney.from, to:lastJourney.to, mode:lastJourney.mode,
+    expected:lastJourney.expectedDelivery,
+    carrier:lastJourney.carrierName
+  };
+  new QRious({element:dynQrCanvas,value:JSON.stringify(data),size:200});
+}
+
+/* ----------------- Download PDF / QR ----------------- */
+// Replace the downloadInvoicePdf event listener in your code with this enhanced version
+
+downloadInvoicePdf.addEventListener('click', () => {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  
+  if (!currentSensor) {
+    alert('No sensor data loaded');
+    return;
+  }
+
+  const lastJourney = currentSensor.journeyHistory.length 
+    ? currentSensor.journeyHistory[currentSensor.journeyHistory.length - 1] 
+    : null;
+
+  // Header
+  doc.setFontSize(20);
+  doc.setFont(undefined, 'bold');
+  doc.text('SHIPPING INVOICE', 105, 20, { align: 'center' });
+  
+  // Add QR Code Image
+  const qrDataURL = dynQrCanvas.toDataURL('image/png');
+  doc.addImage(qrDataURL, 'PNG', 160, 30, 40, 40);
+
+  // Company/Sensor Info Section
+  doc.setFontSize(12);
+  doc.setFont(undefined, 'bold');
+  doc.text('Sensor Information', 20, 35);
+  
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(10);
+  doc.text(`Sensor ID: ${currentSensor.sensorId}`, 20, 42);
+  doc.text(`Container #: ${currentSensor.containerNumber}`, 20, 48);
+  doc.text(`Size: ${currentSensor.size} | Type: ${currentSensor.type}`, 20, 54);
+  
+  // Owner Info
+  doc.setFont(undefined, 'bold');
+  doc.setFontSize(12);
+  doc.text('Owner Details', 20, 65);
+  
+  doc.setFont(undefined, 'normal');
+  doc.setFontSize(10);
+  doc.text(`Name: ${currentSensor.ownerName}`, 20, 72);
+  doc.text(`Company: ${currentSensor.company}`, 20, 78);
+  doc.text(`Email: ${currentSensor.ownerEmail}`, 20, 84);
+  doc.text(`Phone: ${currentSensor.ownerPhone}`, 20, 90);
+
+  // Journey Details
+  if (lastJourney) {
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(12);
+    doc.text('Journey Details', 20, 105);
+    
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(`From: ${lastJourney.from}`, 20, 112);
+    doc.text(`To: ${lastJourney.to}`, 20, 118);
+    doc.text(`Mode: ${lastJourney.mode}`, 20, 124);
+    doc.text(`Expected Delivery: ${lastJourney.expectedDelivery}`, 20, 130);
+    
+    // Carrier Info
+    doc.setFont(undefined, 'bold');
+    doc.setFontSize(12);
+    doc.text('Carrier Information', 20, 145);
+    
+    doc.setFont(undefined, 'normal');
+    doc.setFontSize(10);
+    doc.text(`Carrier: ${lastJourney.carrierName || 'N/A'}`, 20, 152);
+    doc.text(`Contact: ${lastJourney.carrierContact || 'N/A'}`, 20, 158);
+    
+    // Items/Cargo
+    if (lastJourney.items) {
+      doc.setFont(undefined, 'bold');
+      doc.setFontSize(12);
+      doc.text('Cargo Details', 20, 173);
+      
+      doc.setFont(undefined, 'normal');
+      doc.setFontSize(10);
+      doc.text(`Description: ${lastJourney.items.description || 'N/A'}`, 20, 180);
+      doc.text(`Quantity: ${lastJourney.items.quantity || 'N/A'}`, 20, 186);
+      doc.text(`Weight: ${lastJourney.items.weight || 'N/A'} kg`, 20, 192);
+    }
+
+    // Start Time if available
+    if (lastJourney.startTime) {
+      doc.setFontSize(9);
+      doc.setTextColor(100);
+      doc.text(`Journey Started: ${new Date(lastJourney.startTime).toLocaleString()}`, 20, 205);
+    }
+  }
+
+  // Footer
+  doc.setFontSize(8);
+  doc.setTextColor(150);
+  const currentDate = new Date().toLocaleDateString();
+  doc.text(`Generated: ${currentDate} | PortEcho IoT Container Tracker`, 105, 280, { align: 'center' });
+  
+  // Add border/line decorations
+  doc.setDrawColor(0, 99, 212);
+  doc.setLineWidth(0.5);
+  doc.line(20, 25, 190, 25);
+  doc.line(20, 270, 190, 270);
+
+  // Save the PDF
+  doc.save(`Invoice_${currentSensor.sensorId}_${currentDate.replace(/\//g, '-')}.pdf`);
+});
+/* ----------------- Load List ----------------- */
+async function loadList() {
+  listContainer.innerHTML = 'Loading...';
+  try {
+    const snapshot = await db.collection('sensors').orderBy('createdAt', 'desc').get();
+    if (snapshot.empty) {
+      listContainer.innerHTML = '<p class="muted">No sensors registered yet.</p>';
+      return;
+    }
+    
+    let html = '<table style="width:100%;border-collapse:collapse">';
+    html += '<thead><tr style="background:#f3f4f6;text-align:left">';
+    html += '<th style="padding:8px;border-bottom:2px solid #d1d5db">Sensor ID</th>';
+    html += '<th style="padding:8px;border-bottom:2px solid #d1d5db">Container</th>';
+    html += '<th style="padding:8px;border-bottom:2px solid #d1d5db">Owner</th>';
+    html += '<th style="padding:8px;border-bottom:2px solid #d1d5db">Company</th>';
+    html += '<th style="padding:8px;border-bottom:2px solid #d1d5db">Journeys</th>';
+    html += '</tr></thead><tbody>';
+    
+    snapshot.docs.forEach(doc => {
+      const s = doc.data();
+      html += '<tr style="border-bottom:1px solid #e5e7eb">';
+      html += `<td style="padding:8px">${s.sensorId}</td>`;
+      html += `<td style="padding:8px">${s.containerNumber}</td>`;
+      html += `<td style="padding:8px">${s.ownerName}</td>`;
+      html += `<td style="padding:8px">${s.company}</td>`;
+      html += `<td style="padding:8px">${s.journeyHistory?.length || 0}</td>`;
+      html += '</tr>';
+    });
+    
+    html += '</tbody></table>';
+    listContainer.innerHTML = html;
+  } catch (err) {
+    listContainer.innerHTML = `<p style="color:#dc2626">Error loading sensors: ${err.message}</p>`;
+  }
+}
+
+/* ----------------- Export CSV ----------------- */
+exportCsvBtn.addEventListener('click', async()=>{
+  const snapshot=await db.collection('sensors').orderBy('createdAt','desc').get();
+  if(snapshot.empty){ alert('No sensors'); return; }
+  const arr = snapshot.docs.map(d=>({id:d.id,...d.data()}));
+  let csv='SensorId,Container,Owner,Company,Email,Phone\n';
+  arr.forEach(s=>{ csv+=`${s.sensorId},${s.containerNumber},${s.ownerName},${s.company},${s.ownerEmail},${s.ownerPhone}\n`; });
+  const blob = new Blob([csv],{type:'text/csv'}), url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='sensors.csv'; a.click(); URL.revokeObjectURL(url);
+});
+</script>
+</body>
+</html>
+

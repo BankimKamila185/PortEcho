@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PortEcho — Shipment Details</title>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+
+  <!-- Leaflet for map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; 
+      background: #0a0a0a; 
+      color: #fff; 
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 280px;
+      background: #1a1a1a;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #2a2a2a;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 24px;
+      font-weight: 600;
+      margin-bottom: 48px;
+    }
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: #00a8ff;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+    .menu-title {
+      color: #666;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+    .menu-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      color: #999;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-bottom: 4px;
+    }
+    .menu-item a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: inherit;
+      text-decoration: none;
+      width: 100%;
+    }
+    .menu-item:hover { background: #252525; color: #fff; }
+    .menu-item.active { background: #00a8ff; color: #fff; }
+    .menu-item svg { width: 20px; height: 20px; }
+    .alert-item-small {
+      display: flex;
+      gap: 12px;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      background: #2a1a1a;
+      border-left: 3px solid #ff4444;
+      cursor: pointer;
+    }
+    .alert-item-small.warning { border-left-color: #ffaa00; background: #2a2410; }
+    .alert-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: #ff4444;
+      color: #fff;
+      font-size: 18px;
+    }
+    .alert-icon.warning { background: #ffaa00; }
+    .alert-text {
+      flex: 1;
+      font-size: 12px;
+    }
+    .alert-text div:first-child { font-weight: 600; margin-bottom: 2px; }
+    .alert-text div:last-child { color: #999; font-size: 11px; }
+    .sidebar-bottom {
+      margin-top: auto;
+      padding-top: 24px;
+      border-top: 1px solid #2a2a2a;
+    }
+    .main-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 48px;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      font-size: 36px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .header p {
+      color: #999;
+      font-size: 14px;
+    }
+    .header-actions {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .search-box {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      width: 300px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .search-box input {
+      background: none;
+      border: none;
+      color: #fff;
+      outline: none;
+      width: 100%;
+      font-size: 14px;
+    }
+    .search-box input::placeholder { color: #666; }
+    .btn-primary {
+      background: #00a8ff;
+      color: #fff;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    .btn-primary:hover { background: #0096e6; }
+    .user-badge {
+      width: 40px;
+      height: 40px;
+      background: #00a8ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .user-info-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-info {
+      text-align: right;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .user-info div:first-child { font-weight: 600; }
+    .user-info div:last-child { color: #666; font-size: 11px; }
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 24px;
+    }
+    .container-list-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .container-list-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead tr {
+      border-bottom: 2px solid #2a2a2a;
+    }
+    th {
+      padding: 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      color: #999;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    td {
+      padding: 16px 12px;
+      border-bottom: 1px solid #2a2a2a;
+      font-size: 14px;
+    }
+    tbody tr {
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    tbody tr:hover {
+      background: #252525;
+    }
+    tbody tr.selected {
+      background: #1a2a3a;
+    }
+    .status-online { 
+      color: #4ade80; 
+      font-weight: 600;
+    }
+    .status-offline { 
+      color: #ff4444; 
+      font-weight: 600;
+    }
+    .status-delayed { 
+      color: #ffaa00; 
+      font-weight: 600;
+    }
+    .map-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 0;
+      overflow: hidden;
+      height: 500px;
+    }
+    #map {
+      width: 100%;
+      height: 100%;
+    }
+    .info-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    .info-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .info-item label {
+      display: block;
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .info-item value {
+      display: block;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 500;
+    }
+    .sensor-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    .sensor-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .sensor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .sensor-item {
+      background: #252525;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .sensor-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+    .sensor-label {
+      color: #999;
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    .sensor-value {
+      color: #fff;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .event-log-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .event-log-card h2 {
+      font-size: 20px;
+      font-weight: 600;
+      margin-bottom: 24px;
+    }
+    .event-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .event-icon {
+      width: 40px;
+      height: 40px;
+      background: #00a8ff;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 20px;
+    }
+    .event-content {
+      flex: 1;
+    }
+    .event-title {
+      font-weight: 600;
+      margin-bottom: 4px;
+      font-size: 14px;
+    }
+    .event-time {
+      color: #999;
+      font-size: 12px;
+    }
+    .alerts-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      padding: 24px;
+    }
+    .alerts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .alerts-header h2 {
+      font-size: 20px;
+      font-weight: 600;
+    }
+    .configure-btn {
+      color: #999;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .alert-box {
+      background: #2a2410;
+      border: 1px solid #3d3520;
+      border-left: 3px solid #ffaa00;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .alert-box.critical {
+      background: #2a1a1a;
+      border-color: #3d2020;
+      border-left-color: #ff4444;
+    }
+    .alert-box-header {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+    .alert-box-icon {
+      width: 24px;
+      height: 24px;
+      background: #ffaa00;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 14px;
+      color: #000;
+    }
+    .alert-box.critical .alert-box-icon {
+      background: #ff4444;
+      color: #fff;
+    }
+    .alert-box-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .alert-box-desc {
+      color: #ccc;
+      font-size: 13px;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+    .alert-severity {
+      color: #999;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📦</div>
+      <span>ShipTrack</span>
+    </div>
+    
+    <div class="menu-title">Main Menu</div>
+    <div class="menu-item">
+      <a href="dashboard.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Dashboard
+      </a>
+    </div>
+    <div class="menu-item active">
+      <a href="tracking.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 11l3 3L22 4"></path>
+          <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path>
+        </svg>
+        Shipment Tracking
+      </a>
+    </div>
+    <div class="menu-item">
+      <a href="analytics.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 3v18h18"></path>
+          <path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"></path>
+        </svg>
+        Reports & Analytics
+      </a>
+    </div>
+
+    <div class="sidebar-bottom">
+      <div class="menu-title">Alert Log</div>
+      <div id="sidebarAlerts"></div>
+      <div class="menu-item">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+          <circle cx="12" cy="7" r="4"></circle>
+        </svg>
+        User Profile
+      </div>
+      <div class="menu-item" id="logoutButton">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"></path>
+          <polyline points="16 17 21 12 16 7"></polyline>
+          <line x1="21" y1="12" x2="9" y2="12"></line>
+        </svg>
+        Logout
+      </div>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="header">
+      <div>
+        <h1>Container List</h1>
+        <p id="headerSubtitle">View and manage all containers in the system</p>
+      </div>
+      <div class="header-actions">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="M21 21l-4.35-4.35"></path>
+          </svg>
+          <input type="text" placeholder="Search shipments..." id="searchInput">
+        </div>
+        <button class="btn-primary">
+          <span style="font-size: 18px;">+</span>
+          New Shipment
+        </button>
+        <div class="user-info-wrapper">
+          <div class="user-info">
+            <div>Admin User</div>
+            <div>Logistics Manager</div>
+          </div>
+          <div class="user-badge">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path>
+              <circle cx="12" cy="7" r="4"></circle>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content-grid">
+      <div>
+        <div class="container-list-card">
+          <h2>All Containers</h2>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Sensor ID</th>
+                  <th>Container</th>
+                  <th>Company</th>
+                  <th>Owner</th>
+                  <th>Route</th>
+                  <th>Mode</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="containerTable">
+                <tr><td colspan="7" style="text-align:center;color:#666;">Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="map-card">
+          <div id="map"></div>
+        </div>
+
+        <div class="info-card">
+          <h2>Shipment Information</h2>
+          <div class="info-grid">
+            <div class="info-item">
+              <label>Container ID</label>
+              <value id="containerId">Select a container</value>
+            </div>
+            <div class="info-item">
+              <label>Origin</label>
+              <value id="origin">--</value>
+            </div>
+            <div class="info-item">
+              <label>Destination</label>
+              <value id="destination">--</value>
+            </div>
+            <div class="info-item">
+              <label>Current Status</label>
+              <value id="currentStatus">--</value>
+            </div>
+            <div class="info-item">
+              <label>Estimated Arrival</label>
+              <value id="estimatedArrival">--</value>
+            </div>
+            <div class="info-item">
+              <label>Company</label>
+              <value id="carrier">--</value>
+            </div>
+          </div>
+        </div>
+
+        <div class="sensor-card">
+          <h2>Sensor Data</h2>
+          <div class="sensor-grid">
+            <div class="sensor-item">
+              <div class="sensor-icon">💧</div>
+              <div class="sensor-label">Humidity</div>
+              <div class="sensor-value" id="humidity">--</div>
+            </div>
+            <div class="sensor-item">
+              <div class="sensor-icon">🌡️</div>
+              <div class="sensor-label">Temperature</div>
+              <div class="sensor-value" id="temperature">--</div>
+            </div>
+            <div class="sensor-item">
+              <div class="sensor-icon">🌤️</div>
+              <div class="sensor-label">Weather</div>
+              <div class="sensor-value" id="weather">--</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="event-log-card">
+          <h2>Event Log</h2>
+          <div id="eventLog"></div>
+        </div>
+
+        <div class="alerts-card">
+          <div class="alerts-header">
+            <h2>Alerts</h2>
+            <div class="configure-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 1v6m0 6v6M5.64 5.64l4.24 4.24m4.24 4.24l4.24 4.24M1 12h6m6 0h6M5.64 18.36l4.24-4.24m4.24-4.24l4.24-4.24"></path>
+              </svg>
+              Configure
+            </div>
+          </div>
+          <div id="alertsContainer"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTG9CdIT84AREt3d8o0iqc6PA3QrCfnuU",
+      authDomain: "portecho-5d71e.firebaseapp.com",
+      projectId: "portecho-5d71e",
+      storageBucket: "portecho-5d71e.appspot.com",
+      messagingSenderId: "915999347379",
+      appId: "1:915999347379:web:a903839c9ddae3f0f056c6"
+    };
+    
+    if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    
+    const map = L.map('map').setView([20.5937, 78.9629], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    
+    let allSensors = [];
+    let selectedSensor = null;
+    
+    async function loadData(userEmail = null) {
+      const tableBody = document.getElementById('containerTable');
+      try {
+        let query = db.collection("sensors");
+        if (userEmail) query = query.where("ownerEmail", "==", userEmail);
+        
+        const snapshot = await query.get();
+        console.log('Found', snapshot.size, 'sensors');
+        
+        if (snapshot.empty) {
+          tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ff4444;">No sensors found</td></tr>';
+          return;
+        }
+        
+        allSensors = snapshot.docs.map(doc => {
+          const data = doc.data();
+          const latestJourney = data.journeyHistory?.[data.journeyHistory.length - 1];
+          return {
+            ...data,
+            routeFrom: latestJourney?.from || 'N/A',
+            routeTo: latestJourney?.to || 'N/A',
+            transportMode: latestJourney?.mode || 'Ship',
+            eta: latestJourney?.expectedDelivery || null,
+            status: latestJourney ? 'online' : 'offline',
+            humidity: Math.floor(Math.random() * 30) + 60,
+            temperature: Math.floor(Math.random() * 15) + 20,
+            weather: 'Clear'
+          };
+        });
+        
+        selectedSensor = allSensors[0];
+        renderTable(allSensors);
+        displayDetails(selectedSensor);
+        updateMap(allSensors);
+        updateSidebar(allSensors);
+      } catch (error) {
+        console.error('Error:', error);
+        tableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#ff4444;">Error: ' + error.message + '</td></tr>';
+      }
+    }
+    
+    function renderTable(sensors) {
+      const tableBody = document.getElementById('containerTable');
+      tableBody.innerHTML = sensors.map((s, i) => {
+        const statusClass = s.status === 'online' ? 'status-online' : 'status-offline';
+        const selected = selectedSensor?.sensorId === s.sensorId ? 'selected' : '';
+        return `<tr class="${selected}" data-index="${i}" style="cursor:pointer;">
+          <td>${s.sensorId}</td><td>${s.containerNumber}</td><td>${s.company}</td>
+          <td>${s.ownerName}</td><td>${s.routeFrom} → ${s.routeTo}</td>
+          <td>${s.transportMode}</td><td class="${statusClass}">${s.status.toUpperCase()}</td>
+        </tr>`;
+      }).join('');
+      tableBody.querySelectorAll('tr').forEach(row => {
+        row.addEventListener('click', () => {
+          selectedSensor = sensors[parseInt(row.dataset.index)];
+          displayDetails(selectedSensor);
+          renderTable(sensors);
+        });
+      });
+    }
+    
+    function displayDetails(s) {
+      document.getElementById('containerId').textContent = s.containerNumber;
+      document.getElementById('origin').textContent = s.routeFrom;
+      document.getElementById('destination').textContent = s.routeTo;
+      document.getElementById('currentStatus').textContent = s.status;
+      document.getElementById('estimatedArrival').textContent = s.eta || 'N/A';
+      document.getElementById('carrier').textContent = s.company;
+      document.getElementById('humidity').textContent = s.humidity + '%';
+      document.getElementById('temperature').textContent = s.temperature + '°C';
+      document.getElementById('weather').textContent = s.weather;
+      updateEventLog(s);
+      updateAlerts(s);
+    }
+    
+    function updateEventLog(s) {
+      const events = [];
+      if (s.createdAt) events.push({ icon: '📋', title: 'Sensor Registered', time: formatTime(s.createdAt) });
+      if (s.journeyHistory?.length) {
+        s.journeyHistory.forEach((j, i) => {
+          if (j.startTime) events.push({ icon: '🚀', title: `Journey ${i+1}: ${j.from} → ${j.to}`, time: formatTime(j.startTime) });
+        });
+      }
+      if (s.status === 'online') events.push({ icon: '📡', title: 'In Transit', time: 'Current' });
+      if (s.eta) events.push({ icon: '📍', title: 'Estimated Arrival', time: s.eta });
+      
+      document.getElementById('eventLog').innerHTML = events.length ?
+        events.map(e => `<div class="event-item"><div class="event-icon">${e.icon}</div><div class="event-content"><div class="event-title">${e.title}</div><div class="event-time">${e.time}</div></div></div>`).join('') :
+        '<div style="text-align:center;color:#666;padding:20px;">No events</div>';
+    }
+    
+    function updateAlerts(s) {
+      const alerts = [];
+      if (s.humidity > 80) alerts.push({ type: 'warning', title: 'High Humidity', desc: `${s.humidity}%`, severity: 'High' });
+      if (s.temperature > 30) alerts.push({ type: 'warning', title: 'High Temperature', desc: `${s.temperature}°C`, severity: 'High' });
+      if (s.status !== 'online') alerts.push({ type: 'critical', title: 'Connection Lost', desc: `Sensor ${s.sensorId} is ${s.status}`, severity: 'Critical' });
+      
+      document.getElementById('alertsContainer').innerHTML = alerts.length ?
+        alerts.map(a => `<div class="alert-box ${a.type === 'critical' ? 'critical' : ''}"><div class="alert-box-header"><div class="alert-box-icon">⚠</div><div class="alert-box-title">${a.title}</div></div><div class="alert-box-desc">${a.desc}</div><div class="alert-severity">Severity: ${a.severity}</div></div>`).join('') :
+        '<div style="text-align:center;color:#666;padding:20px;">No alerts</div>';
+    }
+    
+    function updateMap(sensors) {
+      map.eachLayer(layer => { if (layer instanceof L.Marker) map.removeLayer(layer); });
+      const cityCoords = {
+        mumbai: [19.076, 72.8777], dubai: [25.2048, 55.2708], singapore: [1.3521, 103.8198],
+        shanghai: [31.2304, 121.4737], london: [51.5074, -0.1278], newyork: [40.7128, -74.0060]
+      };
+      sensors.forEach(s => {
+        let [lat, lng] = [20.5937, 78.9629];
+        if (s.routeFrom) {
+          const city = s.routeFrom.toLowerCase().replace(/\s+/g, '');
+          if (cityCoords[city]) [lat, lng] = cityCoords[city];
+        }
+        const marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup(`<strong>${s.containerNumber}</strong><br>${s.routeFrom} → ${s.routeTo}<br>${s.transportMode} • ${s.status}`);
+      });
+    }
+    
+    function updateSidebar(sensors) {
+      const offline = sensors.filter(s => s.status !== 'online');
+      document.getElementById('sidebarAlerts').innerHTML = offline.length ?
+        offline.slice(0, 3).map(s => `<div class="alert-item-small"><div class="alert-icon">⚠</div><div class="alert-text"><div>${s.sensorId}</div><div>${s.status} - ${s.routeFrom}</div></div></div>`).join('') :
+        '<div style="color:#666;padding:12px;font-size:12px;">No alerts</div>';
+    }
+    
+    function formatTime(t) {
+      if (!t) return 'N/A';
+      if (t.toDate) return t.toDate().toLocaleString();
+      if (typeof t === 'string') try { return new Date(t).toLocaleString(); } catch { return t; }
+      if (t instanceof Date) return t.toLocaleString();
+      return 'N/A';
+    }
+    
+    document.getElementById('searchInput').addEventListener('input', (e) => {
+      const q = e.target.value.toLowerCase();
+      if (!q) { renderTable(allSensors); return; }
+      const filtered = allSensors.filter(s => 
+        s.sensorId?.toLowerCase().includes(q) ||
+        s.containerNumber?.toLowerCase().includes(q) ||
+        s.company?.toLowerCase().includes(q) ||
+        s.routeFrom?.toLowerCase().includes(q) ||
+        s.routeTo?.toLowerCase().includes(q)
+      );
+      renderTable(filtered);
+    });
+    
+    document.getElementById('logoutButton').addEventListener('click', () => {
+      auth.signOut().then(() => window.location.href = 'container-form.html');
+    });
+    
+    auth.onAuthStateChanged(user => {
+      console.log('Auth state:', user ? user.email : 'Not logged in');
+      if (user) {
+        loadData(user.email.toLowerCase());
+      } else {
+        loadData(null);
+      }
+    });
+    
+    setTimeout(() => {
+      if (allSensors.length === 0) {
+        console.log('Timeout - forcing load');
+        loadData(null);
+      }
+    }, 2000);
+    
+    console.log('Tracking page initialized');
+  </script>
+</body>
+</html>

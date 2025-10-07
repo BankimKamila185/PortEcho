@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PortEcho - Reports & Analytics</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: "#00a9ff", light: "#33bbff", dark: "#0087cc" },
+            background: { DEFAULT: "#0a0a0a", light: "#1a1a1a" },
+            card: "#141414",
+            border: "#262626",
+            text: { primary: "#f5f5f5", secondary: "#a3a3a3" },
+            accent: { red: "#ff4d4d", orange: "#ffc107", green: "#28a745" },
+          },
+          fontFamily: { display: ["Inter", "sans-serif"] },
+        },
+      },
+    };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body class="bg-background font-display text-text-primary">
+  <div class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-72 bg-background-light border-r border-border p-6 flex flex-col justify-between">
+      <div>
+        <div class="flex items-center gap-3 mb-10">
+          <div class="h-8 w-8 bg-primary rounded-lg flex items-center justify-center text-white font-bold">📦</div>
+          <h1 class="text-2xl font-bold tracking-tight">PortEcho</h1>
+        </div>
+
+        <div class="space-y-2">
+          <a href="./dashboard.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition">
+            <span class="material-symbols-outlined">dashboard</span> Dashboard
+          </a>
+          <a href="./tracking.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition">
+            <span class="material-symbols-outlined">inventory_2</span> Tracking
+          </a>
+          <a href="./analytics.html" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-primary/10 text-primary font-semibold transition">
+            <span class="material-symbols-outlined">analytics</span> Reports & Analytics
+          </a>
+        </div>
+      </div>
+      <div class="space-y-2">
+        <button class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition">
+          <span class="material-symbols-outlined">account_circle</span> Profile
+        </button>
+        <button id="logoutBtn" class="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-text-secondary hover:bg-card hover:text-text-primary transition">
+          <span class="material-symbols-outlined">logout</span> Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 overflow-y-auto bg-background p-8">
+      <header class="flex items-center justify-between mb-8">
+        <div>
+          <h2 class="text-4xl font-extrabold text-text-primary tracking-tight">Reports & Analytics</h2>
+          <p class="text-text-secondary mt-1">Live overview of shipments and transport performance</p>
+        </div>
+      </header>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div class="widget bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3>Total Shipments</h3><span class="material-symbols-outlined text-primary">all_inbox</span>
+          </div>
+          <p id="totalShipments" class="text-4xl font-bold text-text-primary">--</p>
+        </div>
+
+        <div class="widget bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3>Success Rate</h3><span class="material-symbols-outlined text-accent-green">task_alt</span>
+          </div>
+          <p id="successRate" class="text-4xl font-bold text-accent-green">--%</p>
+        </div>
+
+        <div class="widget bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3>Pending</h3><span class="material-symbols-outlined text-accent-orange">hourglass_top</span>
+          </div>
+          <p id="pendingCount" class="text-4xl font-bold text-accent-orange">--</p>
+        </div>
+
+        <div class="widget bg-card rounded-xl border border-border p-6">
+          <div class="flex items-center justify-between mb-4">
+            <h3>Failed</h3><span class="material-symbols-outlined text-accent-red">error</span>
+          </div>
+          <p id="failedCount" class="text-4xl font-bold text-accent-red">--</p>
+        </div>
+      </div>
+
+      <!-- Charts Section -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+        <!-- Shipment Mode Chart -->
+        <div class="widget bg-card rounded-xl border border-border p-6 flex flex-col lg:flex-row items-center gap-6">
+          <div class="flex-1 flex justify-center">
+            <canvas id="modeChart" width="180" height="180"></canvas>
+          </div>
+          <div class="flex-1 flex flex-col justify-center space-y-2 text-sm text-text-secondary">
+            <p>🚚 Truck — <span id="truckPerc">--</span></p>
+            <p>🚢 Ship — <span id="shipPerc">--</span></p>
+            <p>✈️ Air — <span id="airPerc">--</span></p>
+            <p>🚆 Train — <span id="trainPerc">--</span></p>
+          </div>
+        </div>
+
+        <!-- Success Rate Chart -->
+        <div class="widget bg-card rounded-xl border border-border p-6 flex flex-col lg:flex-row items-center gap-6">
+          <div class="flex-1 flex justify-center">
+            <canvas id="statusChart" width="180" height="180"></canvas>
+          </div>
+          <div class="flex-1 flex flex-col justify-center space-y-2 text-sm text-center">
+            <p class="text-accent-green font-medium">✅ Successful Shipments</p>
+            <p class="text-accent-orange font-medium">🕒 Pending Shipments</p>
+            <p class="text-accent-red font-medium">❌ Failed Shipments</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Carrier Performance Section -->
+      <div class="mt-10">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-semibold text-text-primary">Carrier Performance</h3>
+          <div class="flex items-center gap-2">
+            <label for="sort" class="text-text-secondary text-sm">Sort by:</label>
+            <select id="sort" class="bg-card text-text-primary px-2 py-1 rounded border border-border">
+              <option value="successRate">Success Rate</option>
+              <option value="containers">Containers</option>
+            </select>
+
+            <label for="filterMode" class="text-text-secondary text-sm ml-4">Mode:</label>
+            <select id="filterMode" class="bg-card text-text-primary px-2 py-1 rounded border border-border">
+              <option value="All">All</option>
+              <option value="Truck">Truck</option>
+              <option value="Ship">Ship</option>
+              <option value="Ocean">Ocean</option>
+              <option value="Air">Air</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="overflow-x-auto bg-card rounded-xl border border-border">
+          <table class="min-w-full divide-y divide-border text-sm">
+            <thead class="bg-background-light">
+              <tr>
+                <th class="px-6 py-3 text-left text-text-secondary font-medium uppercase tracking-wider">Carrier</th>
+                <th class="px-6 py-3 text-right text-text-secondary font-medium uppercase tracking-wider">Containers</th>
+                <th class="px-6 py-3 text-right text-text-secondary font-medium uppercase tracking-wider">Success Rate</th>
+                <th class="px-6 py-3 text-right text-text-secondary font-medium uppercase tracking-wider">On-Time</th>
+              </tr>
+            </thead>
+            <tbody id="carrierTable" class="divide-y divide-border">
+              <tr>
+                <td colspan="4" class="px-6 py-8 text-center text-text-secondary">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+  <script>
+    console.log("🚀 Analytics script starting...");
+
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTG9CdIT84AREt3d8o0iqc6PA3QrCfnuU",
+      authDomain: "portecho-5d71e.firebaseapp.com",
+      projectId: "portecho-5d71e",
+      storageBucket: "portecho-5d71e.appspot.com",
+      messagingSenderId: "915999347379",
+      appId: "1:915999347379:web:a903839c9ddae3f0f056c6"
+    };
+
+    if (!firebase.apps.length) {
+      firebase.initializeApp(firebaseConfig);
+      console.log("✅ Firebase initialized");
+    }
+
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    let modeChart = null;
+    let statusChart = null;
+    let unsubscribeSensors = null;
+
+    // Default carriers data
+    const carriersDefault = [
+      { name: "Global Shipping Co.", containers: 4520, successRate: 99.2, onTime: "98.5%", mode: "Ocean" },
+      { name: "Oceanic Freight", containers: 3105, successRate: 98.8, onTime: "97.2%", mode: "Ocean" },
+      { name: "Express Logistics", containers: 2890, successRate: 98.5, onTime: "96.8%", mode: "Truck" },
+      { name: "Rapid Transport", containers: 1570, successRate: 97.1, onTime: "95.5%", mode: "Truck" },
+      { name: "Aero Cargo Inc.", containers: 1215, successRate: 96.4, onTime: "94.2%", mode: "Air" }
+    ];
+
+    const carrierTableBody = document.getElementById("carrierTable");
+    const sortSelect = document.getElementById("sort");
+    const filterModeSelect = document.getElementById("filterMode");
+
+    // Logout
+    const logoutBtn = document.getElementById("logoutBtn");
+    if (logoutBtn) {
+      logoutBtn.addEventListener("click", () => {
+        auth.signOut().then(() => {
+          window.location.href = "login.html";
+        });
+      });
+    }
+
+    // ---------- AUTH ----------
+    auth.onAuthStateChanged(user => {
+      if (!user) {
+        console.log("❌ No user logged in");
+        console.log("⚠️ TESTING MODE: Loading all sensors");
+        setupRealtimeListenerNoAuth();
+        return;
+      }
+
+      console.log("✅ User logged in:", user.email);
+      setupRealtimeListener(user.email);
+    });
+
+    // ---------- NO AUTH (TESTING) ----------
+    function setupRealtimeListenerNoAuth() {
+      console.log("🧪 Loading ALL sensors (no filter)");
+
+      if (unsubscribeSensors) unsubscribeSensors();
+
+      unsubscribeSensors = db.collection("sensors").onSnapshot(
+        snapshot => {
+          const sensors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          console.log("📦 Sensors loaded:", sensors.length);
+          if (sensors.length > 0) {
+            console.log("Sample:", sensors[0]);
+          }
+          updateAnalytics(sensors);
+        },
+        error => {
+          console.error("❌ Error:", error);
+          updateAnalytics([]);
+        }
+      );
+
+      db.collection("carriers").onSnapshot(
+        snapshot => {
+          if (!snapshot.empty) {
+            const carriers = snapshot.docs.map(doc => doc.data());
+            renderCarrierTable(carriers);
+          } else {
+            renderCarrierTable(carriersDefault);
+          }
+        }
+      );
+    }
+
+    // ---------- WITH AUTH ----------
+    function setupRealtimeListener(userEmail) {
+      console.log("🔐 Loading sensors for:", userEmail);
+
+      if (unsubscribeSensors) unsubscribeSensors();
+
+      // Check database first
+      db.collection("sensors").limit(3).get().then(snapshot => {
+        console.log("📊 Database sample (first 3):");
+        snapshot.docs.forEach(doc => {
+          const data = doc.data();
+          console.log("- Sensor:", doc.id, "ownerEmail:", data.ownerEmail || "MISSING");
+        });
+      });
+
+      unsubscribeSensors = db.collection("sensors")
+        .where("ownerEmail", "==", userEmail)
+        .onSnapshot(
+          snapshot => {
+            const sensors = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            console.log("📦 Filtered sensors:", sensors.length);
+            if (sensors.length === 0) {
+              console.warn("⚠️ No sensors for", userEmail);
+            }
+            updateAnalytics(sensors);
+          },
+          error => {
+            console.error("❌ Error:", error);
+            updateAnalytics([]);
+          }
+        );
+
+      db.collection("carriers").onSnapshot(
+        snapshot => {
+          if (!snapshot.empty) {
+            const carriers = snapshot.docs.map(doc => doc.data());
+            renderCarrierTable(carriers);
+          } else {
+            renderCarrierTable(carriersDefault);
+          }
+        }
+      );
+    }
+
+    // ---------- UPDATE ANALYTICS ----------
+    function updateAnalytics(sensors) {
+      console.log("📊 Updating with", sensors.length, "sensors");
+
+      if (sensors.length === 0) {
+        document.getElementById("totalShipments").textContent = "0";
+        document.getElementById("successRate").textContent = "0%";
+        document.getElementById("pendingCount").textContent = "0";
+        document.getElementById("failedCount").textContent = "0";
+        document.getElementById("truckPerc").textContent = "0 (0%)";
+        document.getElementById("shipPerc").textContent = "0 (0%)";
+        document.getElementById("airPerc").textContent = "0 (0%)";
+        document.getElementById("trainPerc").textContent = "0 (0%)";
+        return;
+      }
+
+      const processedSensors = sensors.map(s => {
+        const journey = s.journeyHistory && s.journeyHistory.length > 0
+          ? s.journeyHistory[s.journeyHistory.length - 1]
+          : null;
+        return {
+          status: journey ? "online" : "offline",
+          transportMode: journey?.mode || "Ship",
+          journeyStarted: !!journey
+        };
+      });
+
+      const total = processedSensors.length;
+      const online = processedSensors.filter(s => s.status === "online").length;
+      const failed = processedSensors.filter(s => s.status === "offline").length;
+      const pending = processedSensors.filter(s => !s.journeyStarted).length;
+      const successRate = total > 0 ? ((online / total) * 100).toFixed(1) : 0;
+
+      document.getElementById("totalShipments").textContent = total.toLocaleString();
+      document.getElementById("successRate").textContent = successRate + "%";
+      document.getElementById("pendingCount").textContent = pending.toLocaleString();
+      document.getElementById("failedCount").textContent = failed.toLocaleString();
+
+      const modeMap = { truck: 'Truck', train: 'Train', air: 'Air', ship: 'Ship', ocean: 'Ship' };
+      const modes = { Truck: 0, Ship: 0, Air: 0, Train: 0 };
+      
+      processedSensors.forEach(s => {
+        const key = modeMap[s.transportMode.toLowerCase()] || 'Ship';
+        if (modes[key] !== undefined) modes[key]++;
+      });
+
+      const totalModes = Object.values(modes).reduce((a, b) => a + b, 0) || 1;
+      const perc = v => ((v / totalModes) * 100).toFixed(1);
+
+      document.getElementById("truckPerc").textContent = `${modes.Truck} (${perc(modes.Truck)}%)`;
+      document.getElementById("shipPerc").textContent = `${modes.Ship} (${perc(modes.Ship)}%)`;
+      document.getElementById("airPerc").textContent = `${modes.Air} (${perc(modes.Air)}%)`;
+      document.getElementById("trainPerc").textContent = `${modes.Train} (${perc(modes.Train)}%)`;
+
+      drawCharts(modes, online, pending, failed, total, totalModes);
+      console.log("✅ Analytics updated");
+    }
+
+    // ---------- DRAW CHARTS ----------
+    function drawCharts(modes, online, pending, failed, total, totalModes) {
+      const modeCtx = document.getElementById("modeChart");
+      const statusCtx = document.getElementById("statusChart");
+
+      if (!modeCtx || !statusCtx) return;
+
+      if (modeChart) modeChart.destroy();
+      if (statusChart) statusChart.destroy();
+
+      modeChart = new Chart(modeCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Truck", "Ship", "Air", "Train"],
+          datasets: [{
+            data: [modes.Truck, modes.Ship, modes.Air, modes.Train],
+            backgroundColor: ["#00a9ff", "#38bdf8", "#67e8f9", "#2dd4bf"],
+            borderColor: "#141414",
+            borderWidth: 2
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const val = ctx.parsed || 0;
+                  const pct = ((val / totalModes) * 100).toFixed(1);
+                  return `${ctx.label}: ${val} (${pct}%)`;
+                }
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: true
+        }
+      });
+
+      statusChart = new Chart(statusCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Success", "Pending", "Failed"],
+          datasets: [{
+            data: [online, pending, failed],
+            backgroundColor: ["#28a745", "#ffc107", "#ff4d4d"],
+            borderColor: "#141414",
+            borderWidth: 2
+          }]
+        },
+        options: {
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: ctx => {
+                  const val = ctx.parsed || 0;
+                  const pct = total > 0 ? ((val / total) * 100).toFixed(1) : 0;
+                  return `${ctx.label}: ${val} (${pct}%)`;
+                }
+              }
+            }
+          },
+          responsive: true,
+          maintainAspectRatio: true
+        }
+      });
+
+      console.log("✅ Charts drawn");
+    }
+
+    // ---------- CARRIER TABLE ----------
+    function renderCarrierTable(carriers) {
+      const filtered = filterModeSelect.value === "All"
+        ? carriers
+        : carriers.filter(c => c.mode === filterModeSelect.value);
+
+      const sorted = filtered.sort((a, b) => {
+        const aVal = parseFloat(a[sortSelect.value]) || 0;
+        const bVal = parseFloat(b[sortSelect.value]) || 0;
+        return bVal - aVal;
+      });
+
+      carrierTableBody.innerHTML = "";
+      
+      if (sorted.length === 0) {
+        carrierTableBody.innerHTML = '<tr><td colspan="4" class="px-6 py-8 text-center text-text-secondary">No carriers found</td></tr>';
+        return;
+      }
+
+      sorted.forEach(c => {
+        const row = document.createElement("tr");
+        row.className = "hover:bg-background-light transition";
+        const rate = parseFloat(c.successRate) || 0;
+        row.innerHTML = `
+          <td class="px-6 py-4 font-medium">${c.name}</td>
+          <td class="px-6 py-4 text-right">${c.containers.toLocaleString()}</td>
+          <td class="px-6 py-4 text-right ${rate >= 98 ? 'text-accent-green font-semibold' : 'text-accent-orange'}">${rate.toFixed(1)}%</td>
+          <td class="px-6 py-4 text-right">${c.onTime || '--'}</td>
+        `;
+        carrierTableBody.appendChild(row);
+      });
+    }
+
+    sortSelect.addEventListener("change", () => renderCarrierTable(carriersDefault));
+    filterModeSelect.addEventListener("change", () => renderCarrierTable(carriersDefault));
+
+    renderCarrierTable(carriersDefault);
+
+    console.log("✅ Analytics ready");
+  </script>
+</body>
+</html>

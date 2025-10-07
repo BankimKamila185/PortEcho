@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PortEcho - Login</title>
+
+  <!-- Tailwind & Fonts -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            primary: { DEFAULT: "#00A9FF", dark: "#007ACC" },
+            card: "#121212",
+            border: "#2A2A2A",
+            text: { primary: "#F5F5F5", secondary: "#A1A1A1" }
+          },
+          fontFamily: { sans: ["Inter", "sans-serif"] }
+        }
+      }
+    };
+  </script>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+</head>
+
+<body class="bg-black text-text-primary font-sans min-h-screen flex items-center justify-center px-4">
+  <div class="w-full max-w-md bg-card rounded-2xl shadow-lg p-8 border border-border">
+    <div class="text-center">
+      <svg class="h-12 w-12 text-primary mx-auto" fill="none" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="3"/>
+        <path d="M16 24h16M24 16v16" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+      </svg>
+      <h1 class="text-3xl font-bold mt-4">PortEcho</h1>
+      <p class="text-text-secondary mt-1">Track your shipments effortlessly</p>
+    </div>
+
+    <div id="loginError" class="hidden mt-4 bg-red-500/10 text-red-400 text-sm p-3 rounded-lg"></div>
+
+    <form id="loginForm" class="mt-8 space-y-5">
+      <div>
+        <input id="email" type="email" required placeholder="Email address"
+          class="w-full px-4 py-3 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none placeholder-text-secondary" />
+      </div>
+      <div>
+        <input id="password" type="password" required placeholder="Password"
+          class="w-full px-4 py-3 bg-transparent border border-border rounded-lg focus:ring-2 focus:ring-primary focus:outline-none placeholder-text-secondary" />
+      </div>
+
+      <div class="flex items-center justify-between text-sm">
+        <label class="flex items-center space-x-2">
+          <input type="checkbox" class="accent-primary h-4 w-4 rounded" />
+          <span class="text-text-secondary">Remember me</span>
+        </label>
+        <a href="#" class="text-primary hover:text-primary/80">Forgot password?</a>
+      </div>
+
+      <button type="submit"
+        class="w-full bg-gradient-to-r from-primary to-primary-dark text-white py-3 rounded-lg font-semibold hover:opacity-90 transition">
+        Sign In
+      </button>
+    </form>
+
+    <div class="relative mt-8">
+      <div class="absolute inset-0 flex items-center">
+        <div class="w-full border-t border-border"></div>
+      </div>
+      <div class="relative flex justify-center text-sm">
+        <span class="px-3 bg-card text-text-secondary">Or continue with</span>
+      </div>
+    </div>
+
+    <button id="googleSignIn"
+      class="mt-5 w-full flex items-center justify-center gap-3 py-3 border border-border rounded-lg text-sm font-medium text-text-primary bg-card hover:bg-[#1a1a1a] transition">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="h-5 w-5" alt="Google logo">
+      Sign in with Google
+    </button>
+
+    <p class="text-center text-sm text-text-secondary mt-6">
+      Don’t have an account?
+      <a href="#" class="text-primary hover:text-primary/80">Sign up</a>
+    </p>
+  </div>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDTG9CdIT84AREt3d8o0iqc6PA3QrCfnuU",
+      authDomain: "portecho-5d71e.firebaseapp.com",
+      projectId: "portecho-5d71e",
+      storageBucket: "portecho-5d71e.firebasestorage.app",
+      messagingSenderId: "915999347379",
+      appId: "1:915999347379:web:a903839c9ddae3f0f056c6",
+      measurementId: "G-4CCJZ905YP"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+
+    // Email Login
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.classList.add('hidden');
+
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        window.location.href = `./dashboard.html?ownerEmail=${encodeURIComponent(email)}`;
+      } catch (error) {
+        loginError.textContent = error.message;
+        loginError.classList.remove('hidden');
+      }
+    });
+
+    // Google Login
+    document.getElementById('googleSignIn').addEventListener('click', async () => {
+      const provider = new firebase.auth.GoogleAuthProvider();
+      try {
+        const result = await auth.signInWithPopup(provider);
+        const email = result.user.email;
+        window.location.href = `./dashboard.html?ownerEmail=${encodeURIComponent(email)}`;
+      } catch (error) {
+        loginError.textContent = error.message;
+        loginError.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
